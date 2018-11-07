@@ -19,13 +19,14 @@ app.get('/', function (request, response) {
       })
       .catch(function (err) {
           // display error message in case an error
-	  request.flash('error', err);
+          request.flash('error', err);
           response.render('store/list', {
               title: 'Store listing',
               data: ''
           })
       })
 });
+
 app.get('/add', function (request, response) {
     // render views/store/add.ejs
     response.render('store/add', {
@@ -94,8 +95,8 @@ app.get('/edit/(:id)', function (request, response) {
     // TODO: Initialize the query variable with a SQL query
     // that returns all columns of an item whose id = itemId in the
     // 'store' table
-    var query = 'select * from store where id='+itemId+';';
-    db.one(query)
+    var query = 'select * from store where id = $1';
+    db.one(query, itemId)
         .then(function (row) {
             // if item not found
             if (row.length === 0) {
@@ -121,6 +122,7 @@ app.get('/edit/(:id)', function (request, response) {
         })
 });
 
+
 // Route to update values. Notice that request method is PUT here
 app.put('/edit/(:id)', function (req, res) {
     // Validate user input - ensure non emptiness
@@ -133,22 +135,19 @@ app.put('/edit/(:id)', function (req, res) {
         var item = {
             // sanitize() is a function used to prevent Hackers from inserting
             // malicious code(as data) into our database. There by preventing
-                        // SQL-injection attacks.
+            // SQL-injection attacks.
             sname: req.sanitize('sname').escape().trim(),
             qty: req.sanitize('qty').escape().trim(),
             price: req.sanitize('price').escape().trim()
         };
-
-        // Fetch the id of the item from the request.
-        var itemId = req.params.id;
-
+	var itemId = req.params.id;
         // TODO: Initialize the updateQuery variable with a SQL query
         // that updates the details of an item given its id
         // in the 'store' table
-        var updateQuery = 'Update store set qty ='+ item.qty + ', price =' + item.price + 'where id=' +itemId + ';';
+        var updateQuery = 'UPDATE store SET sname=$1, qty=$2, price=$3 WHERE id = $4;';
 
         // Running SQL query to insert data into the store table
-        db.none(updateQuery)
+        db.none(updateQuery, [item.sname, item.qty, item.price, itemId])
             .then(function (result) {
                 req.flash('success', 'Data updated successfully!');
                 res.redirect('/store');
@@ -177,6 +176,8 @@ app.put('/edit/(:id)', function (req, res) {
     }
 });
 
+
+
 // Route to delete an item. Notice that request method is DELETE here
 app.delete('/delete/(:id)', function (req, res) {
     // Fetch item id of the item to be deleted from the request.
@@ -185,8 +186,8 @@ app.delete('/delete/(:id)', function (req, res) {
     // TODO: Initialize the deleteQuery variable with a SQL query
     // that deletes an item whose id = itemId in the
     // 'store' table
-    var deleteQuery = 'delete from store where id=' +itemId+';';
-    db.none(deleteQuery)
+    var deleteQuery = 'delete from store where id = $1';
+    db.none(deleteQuery, itemId)
         .then(function (result) {
                   req.flash('success', 'successfully deleted it');
                   res.redirect('/store');
@@ -196,5 +197,3 @@ app.delete('/delete/(:id)', function (req, res) {
                    res.redirect('/store')
         })
 });
-
-
